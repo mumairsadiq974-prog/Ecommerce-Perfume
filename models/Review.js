@@ -4,8 +4,14 @@ const reviewSchema = new mongoose.Schema(
   {
     product: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
+      refPath: "productType",
       required: true,
+    },
+    productType: {
+      type: String,
+      required: true,
+      enum: ["Product", "TestBox"],
+      default: "Product",
     },
     customerName: {
       type: String,

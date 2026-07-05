@@ -11,8 +11,14 @@ const orderSchema = new mongoose.Schema(
       {
         product: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
+          refPath: "items.productType",
           required: true,
+        },
+        productType: {
+          type: String,
+          required: true,
+          enum: ["Product", "TestBox"],
+          default: "Product",
         },
         quantity: {
           type: Number,
@@ -28,12 +34,14 @@ const orderSchema = new mongoose.Schema(
     customerInfo: {
       fullName: { type: String, required: true },
       phone: { type: String, required: true },
+      whatsApp: { type: String, default: "" },
       email: { type: String, default: "" },
       address: { type: String, required: true },
       city: { type: String, required: true },
       province: { type: String, required: true },
       postalCode: { type: String, default: "" },
       country: { type: String, default: "Pakistan" },
+      orderNotes: { type: String, default: "" },
     },
     subtotal: {
       type: Number,

@@ -2,7 +2,7 @@ const Contact = require("../models/Contact");
 
 const createContactMessage = async (req, res, next) => {
   try {
-    const { name, email, message, type } = req.body;
+    const { name, email, phone, subject, message, type } = req.body;
     if (!name || !email || !message) {
       return res.status(400).json({ message: "Name, email and message are required." });
     }
@@ -10,6 +10,8 @@ const createContactMessage = async (req, res, next) => {
     const newContact = await Contact.create({
       name,
       email,
+      phone,
+      subject,
       message,
       type: type || "contact",
     });
