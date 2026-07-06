@@ -49,6 +49,7 @@ const createProduct = async (req, res, next) => {
       newArrival,
       concentration,
       size,
+      shippingFee,
     } = req.body;
 
     let imageUrls = [];
@@ -87,6 +88,7 @@ const createProduct = async (req, res, next) => {
       newArrival: newArrival === "true" || newArrival === true,
       concentration,
       size,
+      shippingFee: Math.max(0, Number(shippingFee || 0)),
     });
 
     res.status(201).json(product);
@@ -123,6 +125,11 @@ const updateProduct = async (req, res, next) => {
     if (updateData.featured !== undefined) updateData.featured = updateData.featured === "true" || updateData.featured === true;
     if (updateData.bestSeller !== undefined) updateData.bestSeller = updateData.bestSeller === "true" || updateData.bestSeller === true;
     if (updateData.newArrival !== undefined) updateData.newArrival = updateData.newArrival === "true" || updateData.newArrival === true;
+
+    // Convert shippingFee
+    if (updateData.shippingFee !== undefined) {
+      updateData.shippingFee = Math.max(0, Number(updateData.shippingFee) || 0);
+    }
 
     // Handle Image upload additions
     if (req.files && req.files.length > 0) {

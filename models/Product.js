@@ -43,6 +43,11 @@ const productSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    shippingFee: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     stock: {
       type: Number,
       default: 10,

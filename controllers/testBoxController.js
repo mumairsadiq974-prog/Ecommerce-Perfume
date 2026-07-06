@@ -51,6 +51,7 @@ const createTestBox = async (req, res, next) => {
       whatsIncluded,
       stock,
       status,
+      shippingFee,
     } = req.body;
 
     if (!name || !slug || !price || !shortDescription || !fullDescription) {
@@ -105,6 +106,7 @@ const createTestBox = async (req, res, next) => {
       status: status || "Active",
       rating: 5,
       reviewsCount: 0,
+      shippingFee: Math.max(0, Number(shippingFee || 0)),
     });
 
     res.status(201).json(testBox);
@@ -137,6 +139,11 @@ const updateTestBox = async (req, res, next) => {
     updateData.discount = newOldPrice > newPrice ? (newOldPrice - newPrice) : 0;
     updateData.price = newPrice;
     updateData.oldPrice = newOldPrice;
+
+    // Convert shippingFee
+    if (updateData.shippingFee !== undefined) {
+      updateData.shippingFee = Math.max(0, Number(updateData.shippingFee) || 0);
+    }
 
     // Parse array fields
     if (updateData.features !== undefined) {

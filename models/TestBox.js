@@ -32,6 +32,11 @@ const testBoxSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    shippingFee: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     shortDescription: {
       type: String,
       required: true,

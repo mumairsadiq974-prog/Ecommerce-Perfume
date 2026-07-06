@@ -10,6 +10,7 @@ const orderRoutes = require("./routes/orders");
 const contactRoutes = require("./routes/contacts");
 const reviewRoutes = require("./routes/reviews");
 const testBoxRoutes = require("./routes/testBoxes");
+const shippingSettingsRoutes = require("./routes/shippingSettings");
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/contacts", contactRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/test-boxes", testBoxRoutes);
+app.use("/api/shipping-settings", shippingSettingsRoutes);
 
 // Root index status
 app.get("/", (req, res) => {
