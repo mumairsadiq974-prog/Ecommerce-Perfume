@@ -7,6 +7,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    email: {
+      type: String,
+      default: "",
+    },
     password: {
       type: String,
       required: true,
@@ -14,6 +18,14 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       default: "admin",
+    },
+    resetPasswordToken: {
+      type: String,
+      default: null,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }

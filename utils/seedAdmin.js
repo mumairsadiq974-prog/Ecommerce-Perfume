@@ -5,6 +5,7 @@ const seedAdmin = async () => {
   try {
     const adminUsername = process.env.ADMIN_USERNAME;
     const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminEmail = process.env.ADMIN_EMAIL || "";
 
     if (!adminUsername || !adminPassword) {
       console.warn("Skipping Admin Seeding: ADMIN_USERNAME and ADMIN_PASSWORD must be configured in environment variables.");
@@ -20,6 +21,7 @@ const seedAdmin = async () => {
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
     await User.create({
       username: adminUsername,
+      email: adminEmail,
       password: hashedPassword,
       role: "admin",
     });

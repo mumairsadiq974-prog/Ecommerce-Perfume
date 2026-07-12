@@ -1,10 +1,26 @@
 const Order = require("../models/Order");
+const Product = require("../models/Product");
+const TestBox = require("../models/TestBox");
 
 const createOrder = async (req, res, next) => {
   try {
     const { items, customerInfo, subtotal, shippingFee, grandTotal, paymentMethod } = req.body;
     if (!items || items.length === 0 || !customerInfo) {
       return res.status(400).json({ message: "Invalid order details." });
+    }
+
+    // Validate stock for each item before creating order
+    for (const item of items) {
+      const Model = item.productType === "TestBox" ? TestBox : Product;
+      const dbItem = await Model.findById(item.product);
+      if (!dbItem) {
+        return res.status(404).json({ message: `Product not found: ${item.product}` });
+      }
+      if (dbItem.stock < item.quantity) {
+        return res.status(400).json({
+          message: `Insufficient stock for "${dbItem.name}". Available: ${dbItem.stock}, requested: ${item.quantity}.`
+        });
+      }
     }
 
     // Auto-generate a clean, unique order number
@@ -22,6 +38,12 @@ const createOrder = async (req, res, next) => {
       paymentMethod: paymentMethod || "COD",
       status: "Pending",
     });
+
+    // Deduct stock after successful order creation
+    for (const item of items) {
+      const Model = item.productType === "TestBox" ? TestBox : Product;
+      await Model.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } });
+    }
 
     res.status(201).json(order);
   } catch (error) {

@@ -1,6 +1,8 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
+const { sendPasswordResetEmail } = require("../services/emailService");
 
 const login = async (req, res, next) => {
   try {
@@ -30,6 +32,7 @@ const login = async (req, res, next) => {
       user: {
         id: user._id,
         username: user.username,
+        email: user.email,
         role: user.role,
       },
     });
@@ -76,4 +79,127 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-module.exports = { login, getMe, changePassword };
+const updateProfile = async (req, res, next) => {
+  try {
+    const { username, email } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (username !== undefined) {
+      const existing = await User.findOne({ username, _id: { $ne: user._id } });
+      if (existing) {
+        return res.status(400).json({ message: "Username already taken." });
+      }
+      user.username = username;
+    }
+
+    if (email !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Invalid email format." });
+      }
+      user.email = email;
+    }
+
+    await user.save();
+
+    const token = jwt.sign(
+      { id: user._id, username: user.username, role: user.role },
+      process.env.JWT_SECRET || "supersecretjwtkey123",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      message: "Profile updated successfully.",
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+
+    const user = await User.findOne({ role: "admin" });
+    if (!user || !user.email || user.email !== email) {
+      return res.status(404).json({ message: "Email not found." });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = Date.now() + 30 * 60 * 1000;
+    await user.save();
+
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const resetUrl = `${clientUrl}/admin/reset-password/${resetToken}`;
+
+    try {
+      await sendPasswordResetEmail(user.email, resetUrl);
+    } catch (emailError) {
+      user.resetPasswordToken = null;
+      user.resetPasswordExpires = null;
+      await user.save();
+      return res.status(500).json({ message: "Failed to send reset email. Check SMTP configuration." });
+    }
+
+    res.json({ message: "Password reset link sent to your email." });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+
+    if (!password || !confirmPassword) {
+      return res.status(400).json({ message: "Password and confirm password are required." });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match." });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters." });
+    }
+
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset token." });
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    res.json({ message: "Password reset successful. Redirecting to login..." });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { login, getMe, changePassword, updateProfile, forgotPassword, resetPassword };
